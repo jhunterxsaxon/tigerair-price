@@ -1,0 +1,9 @@
+# 開發用的探測腳本與截圖，不需要進 repo
+_dev/
+__pycache__/
+*.pyc
+*.tmp
+*.json.tmp
+
+# 自己的隨手筆記，repo 是公開的，不要跟著推上去
+備註.txt

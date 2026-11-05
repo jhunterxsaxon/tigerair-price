@@ -1,0 +1,287 @@
+{
+  "stations": [
+    {
+      "code": "TPE",
+      "name": "台北(桃園)",
+      "country": "TW",
+      "mac": "XX3",
+      "short": "桃園(TPE)",
+      "isMain": true
+    },
+    {
+      "code": "DAD",
+      "name": "峴港",
+      "country": "VN",
+      "mac": "XXV",
+      "short": "峴港(DAD)",
+      "isMain": true
+    },
+    {
+      "code": "ICN",
+      "name": "首爾(仁川)",
+      "country": "KR",
+      "mac": "XX4",
+      "short": "仁川(ICN)",
+      "isMain": true
+    },
+    {
+      "code": "OKA",
+      "name": "沖繩",
+      "country": "JP",
+      "mac": "XXO",
+      "short": "沖繩(OKA)",
+      "isMain": true
+    },
+    {
+      "code": "GMP",
+      "name": "首爾(金浦)",
+      "country": "KR",
+      "mac": "XX4",
+      "short": "金浦(GMP)",
+      "isMain": false
+    },
+    {
+      "code": "HSG",
+      "name": "佐賀",
+      "country": "JP",
+      "mac": "XX9",
+      "short": "佐賀(HSG)",
+      "isMain": false
+    },
+    {
+      "code": "RMQ",
+      "name": "台中",
+      "country": "TW",
+      "mac": "XX3",
+      "short": "台中(RMQ)",
+      "isMain": false
+    },
+    {
+      "code": "FUK",
+      "name": "福岡",
+      "country": "JP",
+      "mac": "XX9",
+      "short": "福岡(FUK)",
+      "isMain": true
+    },
+    {
+      "code": "PUS",
+      "name": "釜山",
+      "country": "KR",
+      "mac": "XX4",
+      "short": "釜山(PUS)",
+      "isMain": false
+    },
+    {
+      "code": "CJU",
+      "name": "濟州",
+      "country": "KR",
+      "mac": "XX4",
+      "short": "濟州(CJU)",
+      "isMain": false
+    },
+    {
+      "code": "KIX",
+      "name": "大阪",
+      "country": "JP",
+      "mac": "XX8",
+      "short": "大阪(KIX)",
+      "isMain": true
+    },
+    {
+      "code": "KCZ",
+      "name": "高知",
+      "country": "JP",
+      "mac": "XX8",
+      "short": "高知(KCZ)",
+      "isMain": false
+    },
+    {
+      "code": "OKJ",
+      "name": "岡山",
+      "country": "JP",
+      "mac": "XX8",
+      "short": "岡山(OKJ)",
+      "isMain": false
+    },
+    {
+      "code": "NRT",
+      "name": "東京成田",
+      "country": "JP",
+      "mac": "XX7",
+      "short": "東京成田(NRT)",
+      "isMain": true
+    },
+    {
+      "code": "HND",
+      "name": "東京羽田",
+      "country": "JP",
+      "mac": "XX7",
+      "short": "東京羽田(HND)",
+      "isMain": false
+    },
+    {
+      "code": "NGO",
+      "name": "名古屋",
+      "country": "JP",
+      "mac": "XX6",
+      "short": "名古屋(NGO)",
+      "isMain": false
+    },
+    {
+      "code": "KMQ",
+      "name": "小松",
+      "country": "JP",
+      "mac": "XX6",
+      "short": "小松(KMQ)",
+      "isMain": false
+    },
+    {
+      "code": "KIJ",
+      "name": "新潟",
+      "country": "JP",
+      "mac": "XX5",
+      "short": "新潟(KIJ)",
+      "isMain": false
+    },
+    {
+      "code": "SDJ",
+      "name": "仙台",
+      "country": "JP",
+      "mac": "XX5",
+      "short": "仙台(SDJ)",
+      "isMain": false
+    },
+    {
+      "code": "FKS",
+      "name": "福島",
+      "country": "JP",
+      "mac": "XX5",
+      "short": "福島(FKS)",
+      "isMain": false
+    },
+    {
+      "code": "AXT",
+      "name": "秋田",
+      "country": "JP",
+      "mac": "XX5",
+      "short": "秋田(AXT)",
+      "isMain": false
+    },
+    {
+      "code": "HNA",
+      "name": "花卷",
+      "country": "JP",
+      "mac": "XX5",
+      "short": "花卷(HNA)",
+      "isMain": false
+    },
+    {
+      "code": "HKD",
+      "name": "函館",
+      "country": "JP",
+      "mac": "XX2",
+      "short": "函館(HKD)",
+      "isMain": false
+    },
+    {
+      "code": "CTS",
+      "name": "札幌(新千歲)",
+      "country": "JP",
+      "mac": "XX2",
+      "short": "札幌 新千歲(CTS)",
+      "isMain": true
+    },
+    {
+      "code": "KMJ",
+      "name": "熊本",
+      "country": "JP",
+      "mac": "XX9",
+      "short": "熊本(KMJ)",
+      "isMain": false
+    },
+    {
+      "code": "KHH",
+      "name": "高雄",
+      "country": "TW",
+      "mac": "XX3",
+      "short": "高雄(KHH)",
+      "isMain": true
+    },
+    {
+      "code": "ISG",
+      "name": "石垣島",
+      "country": "JP",
+      "mac": "XXO",
+      "short": "石垣島(ISG)",
+      "isMain": false
+    },
+    {
+      "code": "TNN",
+      "name": "台南",
+      "country": "TW",
+      "mac": "XX3",
+      "short": "台南(TNN)",
+      "isMain": true
+    },
+    {
+      "code": "KMI",
+      "name": "宮崎",
+      "country": "JP",
+      "mac": "XX9",
+      "short": "宮崎(KMI)",
+      "isMain": false
+    },
+    {
+      "code": "YGJ",
+      "name": "米子",
+      "country": "JP",
+      "mac": "XX8",
+      "short": null,
+      "isMain": false
+    },
+    {
+      "code": "OIT",
+      "name": "大分",
+      "country": "JP",
+      "mac": "XX9",
+      "short": "大分(OIT)",
+      "isMain": false
+    }
+  ],
+  "macs": [],
+  "countries": [
+    {
+      "code2": "TW",
+      "name": "台灣"
+    },
+    {
+      "code2": "JP",
+      "name": "日本"
+    },
+    {
+      "code2": "KR",
+      "name": "南韓"
+    },
+    {
+      "code2": "TH",
+      "name": "泰國"
+    },
+    {
+      "code2": "VN",
+      "name": "越南"
+    },
+    {
+      "code2": "AE",
+      "name": "阿拉伯聯合大公國"
+    },
+    {
+      "code2": "CN",
+      "name": "中國"
+    },
+    {
+      "code2": "HK",
+      "name": "香港"
+    }
+  ]
+}

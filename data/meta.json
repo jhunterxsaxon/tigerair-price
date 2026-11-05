@@ -1,0 +1,546 @@
+{
+ "counts": {
+  "KHH": 4782,
+  "RMQ": 721,
+  "TNN": 164,
+  "TPE": 10760
+ },
+ "fetch_log": [
+  {
+   "at": "2026-11-03 09:48:40",
+   "changed": 1117,
+   "ok": true,
+   "rows": 10761,
+   "secs": 0.3,
+   "station": "TPE"
+  },
+  {
+   "at": "2026-11-03 09:48:40",
+   "changed": 545,
+   "ok": true,
+   "rows": 4782,
+   "secs": 0.1,
+   "station": "KHH"
+  },
+  {
+   "at": "2026-11-03 09:48:40",
+   "changed": 77,
+   "ok": true,
+   "rows": 722,
+   "secs": 0.1,
+   "station": "RMQ"
+  },
+  {
+   "at": "2026-11-03 09:48:40",
+   "changed": 25,
+   "ok": true,
+   "rows": 164,
+   "secs": 0.0,
+   "station": "TNN"
+  },
+  {
+   "at": "2026-11-03 09:57:03",
+   "changed": 145,
+   "ok": true,
+   "rows": 10760,
+   "secs": 0.5,
+   "station": "TPE"
+  },
+  {
+   "at": "2026-11-03 09:57:03",
+   "changed": 65,
+   "ok": true,
+   "rows": 4782,
+   "secs": 0.4,
+   "station": "KHH"
+  },
+  {
+   "at": "2026-11-03 09:57:03",
+   "changed": 8,
+   "ok": true,
+   "rows": 721,
+   "secs": 0.2,
+   "station": "RMQ"
+  },
+  {
+   "at": "2026-11-03 09:57:03",
+   "changed": 10,
+   "ok": true,
+   "rows": 164,
+   "secs": 0.2,
+   "station": "TNN"
+  }
+ ],
+ "history_months": {
+  "KHH": [
+   "2026-10",
+   "2026-11"
+  ],
+  "RMQ": [
+   "2026-10",
+   "2026-11"
+  ],
+  "TNN": [
+   "2026-10",
+   "2026-11"
+  ],
+  "TPE": [
+   "2026-10",
+   "2026-11"
+  ]
+ },
+ "history_since": "2026-10-29 14:05:00",
+ "imported_from": "1151022s/data/prices.db",
+ "route_counts": {
+  "AXT|TPE": 41,
+  "CJU|KHH": 155,
+  "CJU|RMQ": 103,
+  "CJU|TPE": 360,
+  "CTS|KHH": 195,
+  "CTS|TPE": 361,
+  "DAD|KHH": 79,
+  "DAD|TPE": 62,
+  "FKS|TPE": 39,
+  "FUK|KHH": 155,
+  "FUK|TPE": 361,
+  "GMP|KHH": 176,
+  "HKD|TPE": 299,
+  "HNA|TPE": 41,
+  "HND|TPE": 360,
+  "HSG|TPE": 154,
+  "ICN|TPE": 352,
+  "ISG|KHH": 41,
+  "ISG|TPE": 145,
+  "KCZ|TPE": 103,
+  "KHH|CJU": 205,
+  "KHH|CTS": 196,
+  "KHH|DAD": 81,
+  "KHH|FUK": 155,
+  "KHH|GMP": 176,
+  "KHH|ISG": 41,
+  "KHH|KIX": 361,
+  "KHH|KMJ": 103,
+  "KHH|KMQ": 41,
+  "KHH|NGO": 155,
+  "KHH|NRT": 359,
+  "KHH|OKA": 361,
+  "KHH|OKJ": 62,
+  "KHH|SDJ": 153,
+  "KIJ|TPE": 103,
+  "KIX|KHH": 361,
+  "KIX|TPE": 361,
+  "KMI|TPE": 103,
+  "KMJ|KHH": 103,
+  "KMJ|TNN": 41,
+  "KMQ|KHH": 41,
+  "KMQ|TPE": 103,
+  "NGO|KHH": 155,
+  "NGO|RMQ": 155,
+  "NGO|TPE": 361,
+  "NRT|KHH": 361,
+  "NRT|TPE": 361,
+  "OIT|TPE": 42,
+  "OKA|KHH": 298,
+  "OKA|RMQ": 103,
+  "OKA|TNN": 41,
+  "OKA|TPE": 361,
+  "OKJ|KHH": 62,
+  "OKJ|TPE": 361,
+  "PUS|TPE": 361,
+  "RMQ|CJU": 104,
+  "RMQ|NGO": 155,
+  "RMQ|OKA": 101,
+  "SDJ|KHH": 151,
+  "SDJ|TPE": 152,
+  "TNN|KMJ": 41,
+  "TNN|OKA": 41,
+  "TPE|AXT": 41,
+  "TPE|CJU": 361,
+  "TPE|CTS": 360,
+  "TPE|DAD": 61,
+  "TPE|FKS": 39,
+  "TPE|FUK": 360,
+  "TPE|HKD": 292,
+  "TPE|HNA": 37,
+  "TPE|HND": 360,
+  "TPE|HSG": 154,
+  "TPE|ICN": 354,
+  "TPE|ISG": 145,
+  "TPE|KCZ": 103,
+  "TPE|KIJ": 103,
+  "TPE|KIX": 361,
+  "TPE|KMI": 103,
+  "TPE|KMQ": 102,
+  "TPE|NGO": 358,
+  "TPE|NRT": 361,
+  "TPE|OIT": 42,
+  "TPE|OKA": 361,
+  "TPE|OKJ": 361,
+  "TPE|PUS": 361,
+  "TPE|SDJ": 151,
+  "TPE|YGJ": 41,
+  "YGJ|TPE": 41
+ },
+ "routes": [
+  [
+   "AXT",
+   "TPE"
+  ],
+  [
+   "CJU",
+   "KHH"
+  ],
+  [
+   "CJU",
+   "RMQ"
+  ],
+  [
+   "CJU",
+   "TPE"
+  ],
+  [
+   "CTS",
+   "KHH"
+  ],
+  [
+   "CTS",
+   "TPE"
+  ],
+  [
+   "DAD",
+   "KHH"
+  ],
+  [
+   "DAD",
+   "TPE"
+  ],
+  [
+   "FKS",
+   "TPE"
+  ],
+  [
+   "FUK",
+   "KHH"
+  ],
+  [
+   "FUK",
+   "TPE"
+  ],
+  [
+   "GMP",
+   "KHH"
+  ],
+  [
+   "HKD",
+   "TPE"
+  ],
+  [
+   "HNA",
+   "TPE"
+  ],
+  [
+   "HND",
+   "TPE"
+  ],
+  [
+   "HSG",
+   "TPE"
+  ],
+  [
+   "ICN",
+   "TPE"
+  ],
+  [
+   "ISG",
+   "KHH"
+  ],
+  [
+   "ISG",
+   "TPE"
+  ],
+  [
+   "KCZ",
+   "TPE"
+  ],
+  [
+   "KHH",
+   "CJU"
+  ],
+  [
+   "KHH",
+   "CTS"
+  ],
+  [
+   "KHH",
+   "DAD"
+  ],
+  [
+   "KHH",
+   "FUK"
+  ],
+  [
+   "KHH",
+   "GMP"
+  ],
+  [
+   "KHH",
+   "ISG"
+  ],
+  [
+   "KHH",
+   "KIX"
+  ],
+  [
+   "KHH",
+   "KMJ"
+  ],
+  [
+   "KHH",
+   "KMQ"
+  ],
+  [
+   "KHH",
+   "NGO"
+  ],
+  [
+   "KHH",
+   "NRT"
+  ],
+  [
+   "KHH",
+   "OKA"
+  ],
+  [
+   "KHH",
+   "OKJ"
+  ],
+  [
+   "KHH",
+   "SDJ"
+  ],
+  [
+   "KIJ",
+   "TPE"
+  ],
+  [
+   "KIX",
+   "KHH"
+  ],
+  [
+   "KIX",
+   "TPE"
+  ],
+  [
+   "KMI",
+   "TPE"
+  ],
+  [
+   "KMJ",
+   "KHH"
+  ],
+  [
+   "KMJ",
+   "TNN"
+  ],
+  [
+   "KMQ",
+   "KHH"
+  ],
+  [
+   "KMQ",
+   "TPE"
+  ],
+  [
+   "NGO",
+   "KHH"
+  ],
+  [
+   "NGO",
+   "RMQ"
+  ],
+  [
+   "NGO",
+   "TPE"
+  ],
+  [
+   "NRT",
+   "KHH"
+  ],
+  [
+   "NRT",
+   "TPE"
+  ],
+  [
+   "OIT",
+   "TPE"
+  ],
+  [
+   "OKA",
+   "KHH"
+  ],
+  [
+   "OKA",
+   "RMQ"
+  ],
+  [
+   "OKA",
+   "TNN"
+  ],
+  [
+   "OKA",
+   "TPE"
+  ],
+  [
+   "OKJ",
+   "KHH"
+  ],
+  [
+   "OKJ",
+   "TPE"
+  ],
+  [
+   "PUS",
+   "TPE"
+  ],
+  [
+   "RMQ",
+   "CJU"
+  ],
+  [
+   "RMQ",
+   "NGO"
+  ],
+  [
+   "RMQ",
+   "OKA"
+  ],
+  [
+   "SDJ",
+   "KHH"
+  ],
+  [
+   "SDJ",
+   "TPE"
+  ],
+  [
+   "TNN",
+   "KMJ"
+  ],
+  [
+   "TNN",
+   "OKA"
+  ],
+  [
+   "TPE",
+   "AXT"
+  ],
+  [
+   "TPE",
+   "CJU"
+  ],
+  [
+   "TPE",
+   "CTS"
+  ],
+  [
+   "TPE",
+   "DAD"
+  ],
+  [
+   "TPE",
+   "FKS"
+  ],
+  [
+   "TPE",
+   "FUK"
+  ],
+  [
+   "TPE",
+   "HKD"
+  ],
+  [
+   "TPE",
+   "HNA"
+  ],
+  [
+   "TPE",
+   "HND"
+  ],
+  [
+   "TPE",
+   "HSG"
+  ],
+  [
+   "TPE",
+   "ICN"
+  ],
+  [
+   "TPE",
+   "ISG"
+  ],
+  [
+   "TPE",
+   "KCZ"
+  ],
+  [
+   "TPE",
+   "KIJ"
+  ],
+  [
+   "TPE",
+   "KIX"
+  ],
+  [
+   "TPE",
+   "KMI"
+  ],
+  [
+   "TPE",
+   "KMQ"
+  ],
+  [
+   "TPE",
+   "NGO"
+  ],
+  [
+   "TPE",
+   "NRT"
+  ],
+  [
+   "TPE",
+   "OIT"
+  ],
+  [
+   "TPE",
+   "OKA"
+  ],
+  [
+   "TPE",
+   "OKJ"
+  ],
+  [
+   "TPE",
+   "PUS"
+  ],
+  [
+   "TPE",
+   "SDJ"
+  ],
+  [
+   "TPE",
+   "YGJ"
+  ],
+  [
+   "YGJ",
+   "TPE"
+  ]
+ ],
+ "stations_fetched": [
+  "TPE",
+  "KHH",
+  "RMQ",
+  "TNN"
+ ],
+ "total_rows": 16427,
+ "updated": "2026-11-03 09:57:03"
+}

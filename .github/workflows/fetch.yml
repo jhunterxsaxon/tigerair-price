@@ -1,0 +1,64 @@
+name: 抓取票價
+
+# GitHub 的 cron 一律是 **UTC**，台灣時間要減 8 小時。
+#   台灣 09:00 → UTC 01:00
+#   台灣 15:30 → UTC 07:30   ← 虎航每天中午 12 點啟動大批更新，下午 3 點後才跑完，
+#   台灣 22:00 → UTC 14:00      所以這個時段的資料最完整
+#
+# 兩個已知的坑：
+# 1. 排程**不保證準時**，尖峰時段可能延遲 3~30 分鐘。這個用途不要緊。
+# 2. repo 若連續 60 天沒有任何提交，GitHub 會自動停用排程。
+#    這裡每次抓到變動就會 commit，正常情況不會發生。
+on:
+  schedule:
+    - cron: '0 1 * * *'
+    - cron: '30 7 * * *'
+    - cron: '0 14 * * *'
+  workflow_dispatch:          # 可以在 Actions 頁手動按「Run workflow」
+
+# 讓內建的 GITHUB_TOKEN 可以把資料 commit 回 repo。
+# 注意：這裡寫了還不夠，repo 的 Settings → Actions → General →
+# Workflow permissions 也必須設成「Read and write permissions」，否則 push 會 403。
+permissions:
+  contents: write
+
+# 同時只跑一個，避免兩次排程重疊造成 push 衝突
+concurrency:
+  group: fetch-prices
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 取出程式碼
+        uses: actions/checkout@v4
+
+      - name: 準備 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # 不需要 pip install：fetch.py 只用標準庫（urllib / json / gzip）
+
+      - name: 抓取票價並更新 data/
+        run: python fetch.py
+
+      - name: 有變動才 commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "資料沒有變動，不產生 commit"
+            exit 0
+          fi
+          git commit -m "資料更新 $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M')"
+          # 萬一這期間 repo 有其他提交，先 rebase 再推，避免整個排程失敗
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            echo "第 $i 次推送失敗，5 秒後重試"
+            sleep 5
+          done
+          exit 1

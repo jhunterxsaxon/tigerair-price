@@ -1,0 +1,126 @@
+/* 台灣虎航票價追蹤 — 亮色主題。
+   顏色沿用 1151022s GUI 的定案：淺底＋深字＋粗體。
+   （當初用深底配黑字，使用者回報「底色和字都是深色，看不清楚」。） */
+:root {
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --line: #d8dee6;
+  --text: #22303c;
+  --muted: #6b7a89;
+  --accent: #1b5fa5;
+  --record-bg: #c8f0cd;
+  --record-fg: #145c20;
+  --cheap-bg: #cfe4ff;
+  --cheap-fg: #0d3f7a;
+  --up: #c0392b;
+  --down: #1e8449;
+  --weekend: #e67e22;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 16px 48px;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+}
+
+header { max-width: 1280px; margin: 0 auto; padding: 20px 0 8px; }
+h1 { margin: 0 0 4px; font-size: 22px; }
+h2 { margin: 0 0 10px; font-size: 17px; }
+.muted { color: var(--muted); font-size: 13px; margin: 0; }
+
+.panel {
+  max-width: 1280px;
+  margin: 12px auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+/* ---- 查詢條件 ---- */
+.fields { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field > label { font-size: 12px; color: var(--muted); }
+.field .pair { display: flex; align-items: center; gap: 6px; }
+select, input[type="date"], input[type="number"] {
+  font: inherit;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--text);
+}
+input[type="number"] { width: 70px; }
+.check { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+
+button {
+  font: inherit;
+  padding: 7px 18px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.08); }
+button.ghost { background: #fff; color: var(--text); border-color: var(--line); }
+button:disabled { opacity: .5; cursor: default; }
+
+/* ---- 分頁 ---- */
+.tabs { max-width: 1280px; margin: 16px auto 0; display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs button {
+  background: transparent; color: var(--muted);
+  border: 1px solid transparent; border-bottom: none;
+  border-radius: 6px 6px 0 0; padding: 7px 14px;
+}
+.tabs button.on {
+  background: var(--card); color: var(--text);
+  border-color: var(--line); font-weight: 700;
+}
+.tab { display: none; }
+.tab.on { display: block; }
+
+/* ---- 表格 ---- */
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { background: #eef2f6; text-align: left; font-weight: 600; position: sticky; top: 0; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+tbody tr:hover { background: #eef5ff; }
+tr.record td { background: var(--record-bg); color: var(--record-fg); font-weight: 700; }
+tr.cheap td { background: var(--cheap-bg); color: var(--cheap-fg); font-weight: 700; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.tall { max-height: 460px; overflow-y: auto; }
+
+/* ---- 圖 ---- */
+.chart-box { background: var(--card); border: 1px solid var(--line);
+             border-radius: 8px; padding: 8px; margin-bottom: 12px; }
+svg { display: block; width: 100%; height: auto; }
+.legend { font-size: 12px; color: var(--muted); padding: 4px 4px 0; }
+.legend b { font-weight: 700; }
+.route-head { font-weight: 700; margin: 0 0 8px; }
+.route-head .sub { font-weight: 400; color: var(--muted); font-size: 13px; }
+
+#tip {
+  position: fixed; z-index: 9; pointer-events: none;
+  background: #22303c; color: #fff; font-size: 13px;
+  padding: 5px 9px; border-radius: 5px; opacity: 0;
+  transition: opacity .1s; white-space: nowrap;
+}
+#tip.on { opacity: 1; }
+
+footer { max-width: 1280px; margin: 28px auto 0; color: var(--muted); font-size: 12px; }
+footer a { color: var(--accent); }
+
+.empty { color: var(--muted); padding: 18px 2px; }
+
+@media (max-width: 720px) {
+  .fields { gap: 8px 12px; }
+  body { padding: 0 10px 32px; }
+}

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台灣虎航票價追蹤</title>
+<meta name="description" content="追蹤台灣虎航每日最低票價，記錄歷史變化，找出區間最便宜的出發日與來回組合。">
+<link rel="stylesheet" href="style.css">
+<!-- 內嵌圖示（一條折線），省掉一個檔案也少一次請求 -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231b5fa5'/><polyline points='6,22 13,14 19,18 26,8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+</head>
+<body>
+
+<header>
+  <h1>台灣虎航票價追蹤</h1>
+  <p class="muted" id="meta-line">載入資料中…</p>
+</header>
+
+<section class="panel">
+  <div class="fields">
+    <div class="field">
+      <label for="origin">出發地</label>
+      <select id="origin"></select>
+    </div>
+    <div class="field">
+      <label for="dest">目的地</label>
+      <select id="dest"></select>
+    </div>
+    <div class="field">
+      <label for="trip">航程</label>
+      <select id="trip">
+        <option value="oneway">單程</option>
+        <option value="return">來回</option>
+      </select>
+    </div>
+    <div class="field">
+      <label id="lbl-out">去程日期</label>
+      <div class="pair">
+        <input type="date" id="out-from"><span>～</span><input type="date" id="out-to">
+      </div>
+    </div>
+    <div class="field ret-only">
+      <label>回程日期</label>
+      <div class="pair">
+        <input type="date" id="ret-from"><span>～</span><input type="date" id="ret-to">
+      </div>
+    </div>
+    <div class="field ret-only">
+      <label>停留天數</label>
+      <div class="pair">
+        <input type="number" id="stay-min" min="0" max="60" value="5"><span>～</span>
+        <input type="number" id="stay-max" min="0" max="60" value="7">
+        <label class="check"><input type="checkbox" id="stay-any"> 不限</label>
+      </div>
+    </div>
+    <div class="field ret-only">
+      <label for="top">組合列前</label>
+      <div class="pair"><input type="number" id="top" min="1" max="100" value="10"><span>名</span></div>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button id="go">查詢</button>
+    </div>
+  </div>
+  <p class="muted" id="status" style="margin-top:8px"></p>
+</section>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="daily" class="on">每日票價</button>
+  <button data-tab="combo" class="ret-only">來回組合</button>
+  <button data-tab="changes">價格變動</button>
+  <button data-tab="about">說明</button>
+</nav>
+
+<section class="panel tab on" id="tab-daily">
+  <div id="out-block">
+    <p class="route-head" id="head-out"></p>
+    <div class="chart-box"><div id="chart-out"></div><div class="legend" id="legend-out"></div></div>
+    <div class="scroll tall"><table id="tbl-out"></table></div>
+  </div>
+  <div id="ret-block" class="ret-only" style="margin-top:22px">
+    <p class="route-head" id="head-ret"></p>
+    <div class="chart-box"><div id="chart-ret"></div><div class="legend" id="legend-ret"></div></div>
+    <div class="scroll tall"><table id="tbl-ret"></table></div>
+  </div>
+</section>
+
+<section class="panel tab" id="tab-combo">
+  <p class="route-head" id="head-combo"></p>
+  <div class="scroll tall"><table id="tbl-combo"></table></div>
+</section>
+
+<section class="panel tab" id="tab-changes">
+  <p class="route-head" id="head-changes"></p>
+  <div class="chart-box" id="trend-box" hidden>
+    <div id="chart-trend"></div><div class="legend" id="legend-trend"></div>
+  </div>
+  <div class="scroll tall"><table id="tbl-changes"></table></div>
+</section>
+
+<section class="panel tab" id="tab-about">
+  <h2>這個網站在做什麼</h2>
+  <p>台灣虎航官方只提供「<b>現在</b>」的每日最低票價，不會回溯歷史。
+     這裡每天定時抓三次存下來，所以可以回頭看<b>某個出發日的價格怎麼變</b>、
+     以及<b>現在是不是歷史低點</b>。</p>
+  <h2>幾個要注意的地方</h2>
+  <ul>
+    <li>顯示的是<b>單人未稅起價</b>，而且是「目前還買得到的最低級距」，會隨訂位狀況浮動。
+        實際結帳金額會再加上稅費與手續費。</li>
+    <li><b>破紀錄</b>（綠底）＝目前價已經跌到歷史最低；但該出發日必須累積兩筆以上紀錄才會標，
+        否則「第一次抓到就是歷史最低」是理所當然的，標了沒意義。</li>
+    <li>折線<b>中斷</b>代表那幾天沒有資料（未開賣或當天沒有航班）。</li>
+    <li>城市群組代碼（XX2 北海道之類）已經排除。實測群組價與個別機場不同步，訂票要看個別機場。</li>
+  </ul>
+  <h2>資料更新時間</h2>
+  <p>每天 <b>09:00 / 15:30 / 22:00</b>（台灣時間）各抓一次。虎航每天中午 12 點啟動大批更新，
+     下午 3 點後才算跑完，所以 15:30 那次通常是當天最完整的。</p>
+  <p class="muted" id="about-meta"></p>
+</section>
+
+<footer>
+  資料來自台灣虎航公開票價 API，僅供參考，實際票價以官網為準。
+  本站為個人興趣專案，與台灣虎航無關。
+</footer>
+
+<div id="tip"></div>
+<script src="chart.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
