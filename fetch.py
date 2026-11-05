@@ -46,9 +46,13 @@ def run(stations, dry_run=False):
         print(f"[OK] {st}: {len(rows):,} 筆（原始 {len(raw):,}）"
               f"　變動 {len(changes):,} 筆　{secs:.1f}s")
 
+        nlow = 0
         if not dry_run:
             store.save_latest(st, rows, at)
             store.append_history(st, changes, at)
+            # 歷史最低要在 append_history 之後算，這一輪的變動才算得進去
+            nlow = store.save_lows(st, rows, at)
+            print(f"     歷史最低已重算 {nlow:,} 筆 → data/lows/{st}.json")
         # 這一站的航線筆數重算（網頁靠它決定預設要顯示哪條航線）
         for k in [k for k in route_counts
                   if fetcher.tw_of(*k.split("|")) == st]:

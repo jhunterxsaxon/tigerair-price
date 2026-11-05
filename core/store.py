@@ -31,6 +31,7 @@ DATA = os.path.join(ROOT, "data")
 TW = timezone(timedelta(hours=8))          # 一律用台灣時間，Actions 跑在 UTC
 LATEST_FIELDS = ["origin", "destination", "date", "amount", "src_updated"]
 HIST_FIELDS = ["origin", "destination", "date", "amount"]
+LOWS_FIELDS = ["origin", "destination", "date", "low", "n", "at_index"]
 
 
 def now_tw():
@@ -139,6 +140,73 @@ def history_months(station):
         return sorted(f[:-5] for f in os.listdir(d) if f.endswith(".json"))
     except OSError:
         return []
+
+
+# ---------------- 歷史最低（預先算好給網頁用） ----------------
+def lows_path(station):
+    return os.path.join(DATA, "lows", f"{station}.json")
+
+
+def build_lows(station, rows):
+    """掃過這一站的全部歷史，算出每個（航線＋出發日）的歷史最低價、紀錄筆數，
+    以及最低價是哪一次抓到的。回傳 (ats, lows)。
+
+    **為什麼要先算好：** 網頁本來是把整站的歷史全部載下來自己算，
+    而歷史是會隨時間無限成長的（估半年 10～15 MB、約 50 萬列），
+    手機上光 JSON.parse 加建索引就會卡住。
+
+    這個檔的列數等於 latest 的列數——航線數×出發日數是固定的，
+    **不隨累積時間成長**，所以網頁不管跑幾年都一樣快。
+
+    時間戳不寫在每一列：同一輪抓取共用一個時間，改成 ats 清單＋索引，
+    省掉上萬次重複（一年的時間戳也才約 1,100 個）。
+    """
+    live = set((o, d, date) for o, d, date, _amount, _src in rows)
+    best = {}
+    for month in history_months(station):
+        data = _read(history_path(station, month), {}) or {}
+        for b in data.get("batches", []):
+            at = b.get("at", "")
+            for r in b.get("rows", []):
+                if len(r) < 4:
+                    continue
+                key = (r[0], r[1], r[2])
+                if key not in live:     # 已經不賣的組合不必留在查詢用的檔裡
+                    continue
+                cur = best.get(key)
+                if cur is None:
+                    best[key] = [r[3], 1, at]
+                else:
+                    cur[1] += 1
+                    if r[3] < cur[0]:   # 同價時保留較早的那次，和 GUI 版一致
+                        cur[0] = r[3]
+                        cur[2] = at
+    ats = sorted(set(v[2] for v in best.values()))
+    idx = {a: i for i, a in enumerate(ats)}
+    lows = [[k[0], k[1], k[2], v[0], v[1], idx[v[2]]]
+            for k, v in sorted(best.items())]
+    return ats, lows
+
+
+def save_lows(station, rows, updated):
+    ats, lows = build_lows(station, rows)
+    path = lows_path(station)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    parts = ['{"station": %s, "updated": %s, "fields": %s,'
+             % (json.dumps(station), json.dumps(updated),
+                json.dumps(LOWS_FIELDS, ensure_ascii=False)),
+             '"ats": [',
+             ",\n".join(json.dumps(a) for a in ats),
+             '],',
+             '"rows": [',
+             ",\n".join(json.dumps(r, ensure_ascii=False,
+                                   separators=(",", ":")) for r in lows),
+             ']}']
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(parts) + "\n")
+    os.replace(tmp, path)
+    return len(lows)
 
 
 # ---------------- meta ----------------

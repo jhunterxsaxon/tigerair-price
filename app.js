@@ -18,8 +18,12 @@
   var S = {
     meta: null, st: {}, routes: [],
     latest: {},        // tw -> {byKey, byRoute}
-    hist: {},          // tw -> {key -> [[at, amount], ...]}
-    ctx: null          // 最近一次查詢的結果
+    lows: {},          // tw -> {key -> {low, n, at}}　查詢只需要這個
+    hist: {},          // tw -> {key -> [[at, amount], ...]}　只有變動頁與趨勢圖要
+    histP: {},         // tw -> Promise，避免同時觸發兩次下載
+    ctx: null,         // 最近一次查詢的條件
+    changesReady: false,
+    statusText: ''
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -66,10 +70,28 @@
     });
   }
 
+  /* 預先算好的「每個出發日的歷史最低」。查詢只靠這個檔，
+     大小固定在 650KB 左右（航線數×出發日數），不隨累積時間成長。 */
+  function loadLows(tw) {
+    if (S.lows[tw]) return Promise.resolve(S.lows[tw]);
+    return getJSON('data/lows/' + tw + '.json?v=' + ver()).then(function (d) {
+      var ats = d.ats || [], idx = {};
+      (d.rows || []).forEach(function (r) {
+        idx[r[0] + '|' + r[1] + '|' + r[2]] =
+          { low: r[3], n: r[4], at: ats[r[5]] || '' };
+      });
+      S.lows[tw] = idx;
+      return idx;
+    });
+  }
+
+  /* 完整歷史。會隨時間一直長大，所以**只有**價格變動頁和趨勢圖才載，
+     而且是切到那一頁時才載，不在查詢時擋著。 */
   function loadHist(tw) {
     if (S.hist[tw]) return Promise.resolve(S.hist[tw]);
+    if (S.histP[tw]) return S.histP[tw];          // 同時被叫兩次不要下載兩遍
     var months = (S.meta.history_months || {})[tw] || [];
-    return Promise.all(months.map(function (m) {
+    S.histP[tw] = Promise.all(months.map(function (m) {
       return getJSON('data/history/' + tw + '/' + m + '.json?v=' + ver())
         .catch(function () { return null; });
     })).then(function (files) {
@@ -88,25 +110,23 @@
       S.hist[tw] = idx;
       return idx;
     });
+    return S.histP[tw];
   }
 
   /* ---------------- 查詢計算 ---------------- */
   function queryOneWay(o, d, from, to) {
     var tw = twOf(o, d);
     var all = (S.latest[tw].byRoute[o + '|' + d]) || [];
-    var hist = S.hist[tw] || {};
+    var lows = S.lows[tw] || {};
     return all.filter(function (r) { return r.date >= from && r.date <= to; })
       .map(function (r) {
-        var seq = hist[o + '|' + d + '|' + r.date] || [];
-        var low = null, lowAt = '';
-        seq.forEach(function (p) {
-          if (low === null || p[1] < low) { low = p[1]; lowAt = p[0]; }
-        });
+        var L = lows[o + '|' + d + '|' + r.date];
+        var low = L ? L.low : null;
         return {
           date: r.date, weekday: wd(r.date), amount: r.amount, src: r.src,
-          histLow: low, histN: seq.length, histLowAt: lowAt,
+          histLow: low, histN: L ? L.n : 0, histLowAt: L ? L.at : '',
           // 只抓過一次時「現在＝歷史最低」是理所當然的，不標才不會整欄都是雜訊
-          isRecord: low !== null && seq.length > 1 && r.amount <= low,
+          isRecord: low !== null && L.n > 1 && r.amount <= low,
           diff: low === null ? null : r.amount - low
         };
       });
@@ -194,9 +214,39 @@
       '｜　滑鼠移到點上看當天明細；折線中斷代表那幾天沒有資料（未開賣或無航班）。';
   }
 
+  /* 切到「價格變動」頁時才載完整歷史，並把表格補上。 */
+  function ensureChanges() {
+    var c = S.ctx;
+    if (!c || S.changesReady) return Promise.resolve();
+    var prev = S.statusText;
+    status('載入完整歷史中…');
+    return loadHist(twOf(c.o, c.d)).then(function () {
+      S.changesReady = true;
+      var ch = changesOf(c.o, c.d, c.f, c.t);
+      $('head-changes').innerHTML = routeLabel(c.o, c.d) +
+        '<span class="sub">　' + c.f + ' ～ ' + c.t + '　共 ' +
+        ch.length.toLocaleString('en-US') + ' 筆變動　｜　歷史自 ' +
+        (S.meta.history_since || '—').slice(0, 16) +
+        '　｜　在「每日票價」點任一列可看該出發日走勢</span>';
+      changesTable(ch);
+      status(prev);
+    }).catch(function (e) { status('載入歷史失敗：' + e.message); });
+  }
+
   function showTrend(o, d, date) {
-    var seq = (S.hist[twOf(o, d)] || {})[o + '|' + d + '|' + date] || [];
     $('trend-box').hidden = false;
+    var head0 = routeLabel(o, d) + '　出發日 ' + date + '（' + wd(date) + '）';
+    if (!S.hist[twOf(o, d)]) {
+      $('chart-trend').innerHTML = '<p class="empty">' + head0 + '　載入歷史中…</p>';
+    }
+    loadHist(twOf(o, d)).then(function () { drawTrend(o, d, date); })
+      .catch(function (e) {
+        $('chart-trend').innerHTML = '<p class="empty">載入歷史失敗：' + e.message + '</p>';
+      });
+  }
+
+  function drawTrend(o, d, date) {
+    var seq = (S.hist[twOf(o, d)] || {})[o + '|' + d + '|' + date] || [];
     var head = routeLabel(o, d) + '　出發日 ' + date + '（' + wd(date) + '）';
     if (seq.length < 1) {
       $('chart-trend').innerHTML = '<p class="empty">' + head + ' 還沒有歷史紀錄。</p>';
@@ -248,7 +298,9 @@
     t.querySelectorAll('tbody tr').forEach(function (tr) {
       tr.style.cursor = 'pointer';
       tr.title = '點一下看這個出發日的價格走勢';
-      tr.onclick = function () { tab('changes'); showTrend(o, d, tr.dataset.date); };
+      tr.onclick = function () {
+        tab('changes'); ensureChanges(); showTrend(o, d, tr.dataset.date);
+      };
     });
   }
 
@@ -292,8 +344,9 @@
     if (!f || !t || f > t) { status('去程日期範圍不正確。'); return; }
 
     status('讀取資料中…');
-    var need = [loadLatest(twOf(o, d)), loadHist(twOf(o, d))];
-    if (isRet) { need.push(loadLatest(twOf(d, o))); need.push(loadHist(twOf(d, o))); }
+    // 查詢只要 latest ＋ 預先算好的歷史最低，不載完整歷史（那個會愈來愈大）
+    var need = [loadLatest(twOf(o, d)), loadLows(twOf(o, d))];
+    if (isRet) { need.push(loadLatest(twOf(d, o))); need.push(loadLows(twOf(d, o))); }
 
     Promise.all(need).then(function () {
       var rows = queryOneWay(o, d, f, t);
@@ -333,12 +386,11 @@
         status(summary(rows));
       }
 
-      var ch = changesOf(o, d, f, t);
+      // 價格變動頁要完整歷史，資料量大得多，所以切到那一頁時才載
+      S.changesReady = false;
       $('head-changes').innerHTML = routeLabel(o, d) +
-        '<span class="sub">　' + f + ' ～ ' + t + '　共 ' + ch.length.toLocaleString('en-US') +
-        ' 筆變動　｜　歷史自 ' + (S.meta.history_since || '—').slice(0, 16) +
-        '　｜　在「每日票價」點任一列可看該出發日走勢</span>';
-      changesTable(ch);
+        '<span class="sub">　' + f + ' ～ ' + t + '　點開這一頁才會載入完整歷史</span>';
+      changesTable([]);
       $('trend-box').hidden = true;
       save();
     }).catch(function (e) {
@@ -362,7 +414,7 @@
            (best.length > 6 ? ' 等 ' + best.length + ' 天' : '');
   }
 
-  function status(msg) { $('status').textContent = msg; }
+  function status(msg) { S.statusText = msg; $('status').textContent = msg; }
 
   /* ---------------- 介面 ---------------- */
   function fillOrigins() {
@@ -512,7 +564,10 @@
     $('stay-min').disabled = $('stay-max').disabled = this.checked;
   };
   document.querySelectorAll('#tabs button').forEach(function (b) {
-    b.onclick = function () { tab(b.dataset.tab); };
+    b.onclick = function () {
+      tab(b.dataset.tab);
+      if (b.dataset.tab === 'changes') ensureChanges();
+    };
   });
   var rt;
   window.addEventListener('resize', function () {          // 視窗變寬時重畫，圖才不會糊
