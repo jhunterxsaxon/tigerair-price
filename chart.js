@@ -53,6 +53,8 @@
     var all = [];
     (opts.segments || []).forEach(function (s) { all = all.concat(s); });
     (opts.dots || []).forEach(function (d) { all.push(d); });
+    // 底部標記沒有 y 值，但 x 要算進範圍裡，否則落在最後面的標記會被切掉
+    var markXs = (opts.marks || []).map(function (m) { return m.x; });
     if (!all.length) {
       box.innerHTML = '<p class="empty">沒有可以畫的資料。</p>';
       return;
@@ -60,7 +62,7 @@
 
     var W = Math.max(320, box.clientWidth || box.parentNode.clientWidth || 900);
     var H = opts.height || 340;
-    var xs = all.map(function (p) { return p.x; });
+    var xs = all.map(function (p) { return p.x; }).concat(markXs);
     var ys = all.map(function (p) { return p.y; });
     var x0 = opts.xMin !== undefined ? opts.xMin : Math.min.apply(null, xs);
     var x1 = opts.xMax !== undefined ? opts.xMax : Math.max.apply(null, xs);

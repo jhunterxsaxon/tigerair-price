@@ -78,7 +78,7 @@
       var ats = d.ats || [], idx = {};
       (d.rows || []).forEach(function (r) {
         idx[r[0] + '|' + r[1] + '|' + r[2]] =
-          { low: r[3], n: r[4], at: ats[r[5]] || '' };
+          { low: r[3], n: r[4], at: ats[r[5]] || '', gone: r[6] === 1 };
       });
       S.lows[tw] = idx;
       return idx;
@@ -146,6 +146,7 @@
    */
   function missingInfo(o, d, from, to) {
     var tw = twOf(o, d);
+    var lows = S.lows[tw] || {};
     var all = (S.latest[tw] && S.latest[tw].byRoute[o + '|' + d]) || [];
     if (!all.length) return [];
     var has = {};
@@ -167,8 +168,12 @@
       var k = iso(cur);
       if (!has[k] && k >= all[0].date && k <= all[all.length - 1].date) {
         var ww = cur.getDay();
-        out.push({ date: k, weekday: wd(k),
-                   soldOut: tot[ww] > 0 && fly[ww] / tot[ww] >= 0.5 });
+        // 我們**親眼看過它從有價格變成沒有** → 確定是賣完，不必猜
+        var L = lows[o + '|' + d + '|' + k];
+        var seen = !!(L && L.gone);
+        out.push({ date: k, weekday: wd(k), seen: seen,
+                   soldOut: seen || (tot[ww] > 0 && fly[ww] / tot[ww] >= 0.5),
+                   lastLow: L ? L.low : null });
       }
       cur = addDays(cur, 1);
     }
@@ -213,7 +218,10 @@
       if (p[2] < from || p[2] > to) return;
       var seq = hist[k];
       for (var i = 1; i < seq.length; i++) {
-        out.push({ at: seq[i][0], date: p[2], before: seq[i - 1][1], after: seq[i][1] });
+        // amount 0 = 那次抓取時這個出發日整個從官方清單上消失了（賣完）
+        out.push({ at: seq[i][0], date: p[2],
+                   before: seq[i - 1][1], after: seq[i][1],
+                   soldOut: seq[i][1] <= 0, back: seq[i - 1][1] <= 0 });
       }
     });
     out.sort(function (a, b) { return a.at < b.at ? 1 : (a.at > b.at ? -1 : 0); });
@@ -305,46 +313,84 @@
       $('legend-trend').innerHTML = '';
       return;
     }
-    var pts = seq.map(function (p) { return { x: +parseAt(p[0]), y: p[1] }; });
-    // 最後再延伸到「現在」，表示到目前為止都還是這個價
+    /* amount 0 = 那次抓取時這個出發日整個消失了（賣完）。
+       它沒有價格，不能畫成點，否則折線會被拉到 Y 軸底部變成假的「跌到 0」。
+       改成：線在那裡斷開，X 軸上立一根紅色短豎線。 */
+    var segs = [], cur = [], marks = [];
+    seq.forEach(function (p) {
+      var x = +parseAt(p[0]);
+      if (p[1] <= 0) {
+        if (cur.length) { segs.push(cur); cur = []; }
+        marks.push({ x: x, tip: p[0].slice(5, 16) + '　查不到價格了，應該是賣完' });
+      } else {
+        cur.push({ x: x, y: p[1] });
+      }
+    });
+    if (cur.length) segs.push(cur);
+    var amounts = seq.filter(function (p) { return p[1] > 0; })
+                     .map(function (p) { return p[1]; });
+    if (!amounts.length) {
+      $('chart-trend').innerHTML = '<p class="empty">' + head +
+        ' 目前查不到價格（應該是賣完了）。</p>';
+      $('legend-trend').innerHTML = '';
+      return;
+    }
+    // 最後再延伸到「現在」，表示到目前為止都還是這個價（只有還在賣時才延伸）
     var nowMs = S.meta.updated ? +parseAt(S.meta.updated) : Date.now();
-    var segs = [pts.concat(nowMs > pts[pts.length - 1].x
-                           ? [{ x: nowMs, y: pts[pts.length - 1].y }] : [])];
-    var amounts = seq.map(function (p) { return p[1]; });
+    var lastSeg = segs[segs.length - 1];
+    if (seq[seq.length - 1][1] > 0 && lastSeg && lastSeg.length &&
+        nowMs > lastSeg[lastSeg.length - 1].x) {
+      lastSeg.push({ x: nowMs, y: lastSeg[lastSeg.length - 1].y });
+    }
 
     /* 可疑尖刺：比自己上一筆暴漲一倍以上。
      *
      * 2026-11-05 查證：便宜艙等賣完時，那個出發日會整個從 API 上消失；
      * 之後釋出座位重新出現時只剩最貴的艙等（實測 ICN→TPE 2026-11-07
-     * 從 3,799 變成 11,199）。我們不記錄「消失」，所以這在歷史裡
-     * 長得像一次暴漲——其實不是漲價。
+     * 從 3,799 變成 11,199）。
      *
-     * 判斷標準刻意用「和自己上一筆比」而不是「和航線中位數比」：
-     * 春節、連假的票本來就貴，用中位數會把 1,945 個正常的旺季價格誤標成異常；
-     * 用「一步漲一倍」只剩 17 個，而且每一個都是近期出發日的熱門航線。
+     * 現在已經會記錄「消失」了，所以**前一筆是消失**的就是確證，直接標。
+     * 消失事件之前的歷史（或還沒記錄到的）才退回用推論：和自己上一筆比漲一倍以上。
+     * 刻意不用「和航線中位數比」——春節、連假的票本來就貴，
+     * 那樣會把 1,945 個正常旺季價格誤標成異常，而這個標準只剩 17 個。
      */
     var nSpike = 0;
-    var dots = seq.map(function (p, i) {
-      var spike = i > 0 && p[1] >= seq[i - 1][1] * 2;
+    var dots = seq.filter(function (p) { return p[1] > 0; }).map(function (p) {
+      var i = seq.indexOf(p);
+      var prev = i > 0 ? seq[i - 1][1] : null;
+      var confirmed = prev !== null && prev <= 0;          // 前一筆就是「消失」
+      var guessed = prev !== null && prev > 0 && p[1] >= prev * 2;
+      var spike = confirmed || guessed;
       if (spike) nSpike++;
+      var note = '';
+      if (confirmed) {
+        note = '　⚠ 前一次抓取時這天是查不到價格的（賣完），'
+             + '這是重新開賣後的價格，不是漲價';
+      } else if (guessed) {
+        note = '　⚠ 一次漲到前一筆的 ' + (p[1] / prev).toFixed(1)
+             + ' 倍，可能是中間賣完又釋出高價艙等，不一定是漲價';
+      }
       return { x: +parseAt(p[0]), y: p[1], kind: spike ? 'spike' : 'weekday',
-               tip: p[0].slice(5, 16) + '　TWD ' + money(p[1])
-                    + (spike ? '　⚠ 一次漲到前一筆的 '
-                               + (p[1] / seq[i - 1][1]).toFixed(1)
-                               + ' 倍，可能是賣完後釋出的高價艙等，不是漲價' : '') };
+               tip: p[0].slice(5, 16) + '　TWD ' + money(p[1]) + note };
     });
-    Chart.draw($('chart-trend'), { segments: segs, dots: dots, xType: 'time',
-                                   stepped: true, xTitle: '抓取時間',
+    Chart.draw($('chart-trend'), { segments: segs, dots: dots, marks: marks,
+                                   xType: 'time', stepped: true,
+                                   xTitle: '抓取時間',
                                    yTitle: '票價 (TWD)', height: 300 });
     $('legend-trend').innerHTML =
-      '<b>' + head + '</b>　｜　目前 TWD ' + money(amounts[amounts.length - 1]) +
+      '<b>' + head + '</b>　｜　目前 ' +
+      (seq[seq.length - 1][1] <= 0
+        ? '<b style="color:#c0392b">查不到價格（應該是賣完）</b>'
+        : 'TWD ' + money(amounts[amounts.length - 1])) +
       '　｜　期間最低 <b style="color:#1e8449">' + money(Math.min.apply(null, amounts)) +
       '</b>　｜　最高 <b style="color:#c0392b">' + money(Math.max.apply(null, amounts)) +
       '</b>　｜　共 ' + seq.length + ' 個紀錄點。折線是階梯狀，因為只有價格變動時才留紀錄。' +
+      (marks.length ? '<br><b style="color:#c0392b">▌ 有 ' + marks.length +
+                ' 次查不到價格</b>——便宜艙等賣完時，這個出發日會整個從官方資料消失，'
+                + '線在那裡斷開。' : '') +
       (nSpike ? '<br><b style="color:#b9770e">⚠ 有 ' + nSpike +
-                ' 個點一次漲到前一筆的兩倍以上（橘色）</b>——便宜艙等賣完時，' +
-                '這個出發日會整個從官方資料消失，之後釋出座位重新出現時只剩最貴的艙等。' +
-                '看起來像暴漲，實際上不是漲價。' : '');
+                ' 個點是賣完後重新開賣、或一次漲到前一筆兩倍以上（橘色）</b>——'
+                + '那是只剩最貴的艙等，看起來像暴漲，實際上不是漲價。' : '');
     $('trend-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -413,9 +459,23 @@
     var h = '<thead><tr><th>抓到的時間</th><th>出發日</th><th class="num">變動前</th>' +
             '<th class="num">變動後</th><th class="num">漲跌</th></tr></thead><tbody>';
     list.slice(0, 500).forEach(function (c) {
+      var cell = '<td>' + c.at.slice(0, 16) + '</td><td>' + c.date +
+                 '（' + wd(c.date) + '）</td>';
+      if (c.soldOut) {                        // 有價格 → 整個消失
+        h += '<tr class="soldout">' + cell +
+             '<td class="num">' + money(c.before) + '</td>' +
+             '<td colspan="2">查不到價格了，應該是賣完</td></tr>';
+        return;
+      }
+      if (c.back) {                           // 消失 → 又冒出來
+        h += '<tr class="soldout">' + cell +
+             '<td class="num">—</td>' +
+             '<td class="num">' + money(c.after) + '</td>' +
+             '<td>重新開賣</td></tr>';
+        return;
+      }
       var diff = c.after - c.before;
-      h += '<tr><td>' + c.at.slice(0, 16) + '</td><td>' + c.date +
-           '（' + wd(c.date) + '）</td>' +
+      h += '<tr>' + cell +
            '<td class="num">' + money(c.before) + '</td>' +
            '<td class="num">' + money(c.after) + '</td>' +
            '<td class="num ' + (diff > 0 ? 'up' : 'down') + '">' +

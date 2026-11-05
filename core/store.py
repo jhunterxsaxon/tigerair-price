@@ -31,7 +31,7 @@ DATA = os.path.join(ROOT, "data")
 TW = timezone(timedelta(hours=8))          # 一律用台灣時間，Actions 跑在 UTC
 LATEST_FIELDS = ["origin", "destination", "date", "amount", "src_updated"]
 HIST_FIELDS = ["origin", "destination", "date", "amount"]
-LOWS_FIELDS = ["origin", "destination", "date", "low", "n", "at_index"]
+LOWS_FIELDS = ["origin", "destination", "date", "low", "n", "at_index", "gone"]
 
 
 def now_tw():
@@ -123,13 +123,34 @@ def append_history(station, changes, at):
     return len(changes)
 
 
-def diff_changes(old, rows):
-    """找出價格和上次不同的（含這次才出現的新航線/新日期）。"""
+def diff_changes(old, rows, today=None):
+    """找出價格和上次不同的（含這次才出現的新航線/新日期），
+    以及**這次整個消失的**出發日——後者用 amount=0 記錄。
+
+    為什麼要記錄消失（2026-11-05 查證後補上）：
+    官方 API 只回「還買得到的最低價」。便宜艙等全部賣完時，那個出發日會
+    **整個從清單上消失**；之後有人退票、座位釋出，它又會冒出來，但只剩最貴的艙等
+    （實測 ICN→TPE 2026-11-07 從 3,799 變成 11,199）。
+
+    不記錄消失的話，歷史裡只看得到「3,799 → 11,199」，長得像暴漲，
+    其實中間那段是賣完了。記下來才分得出「漲價」和「賣完又放出高價艙等」。
+
+    amount=0 當哨兵值是安全的：`normalize()` 會濾掉 amount<=0，
+    所以真實資料永遠不可能是 0。
+
+    只記錄**未來**的出發日：日期過了本來就會從清單上掉下來，那不是賣完。
+    """
+    today = today or now_tw()[:10]
     changes = []
+    seen = set()
     for o, d, date, amount, _src in rows:
+        seen.add((o, d, date))
         prev = old.get((o, d, date))
         if prev is None or prev[0] != amount:
             changes.append((o, d, date, amount))
+    for (o, d, date) in old:
+        if (o, d, date) not in seen and date > today:
+            changes.append((o, d, date, 0.0))
     return changes
 
 
@@ -162,7 +183,9 @@ def build_lows(station, rows):
     省掉上萬次重複（一年的時間戳也才約 1,100 個）。
     """
     live = set((o, d, date) for o, d, date, _amount, _src in rows)
+    today = now_tw()[:10]
     best = {}
+    gone = {}
     for month in history_months(station):
         data = _read(history_path(station, month), {}) or {}
         for b in data.get("batches", []):
@@ -171,8 +194,11 @@ def build_lows(station, rows):
                 if len(r) < 4:
                     continue
                 key = (r[0], r[1], r[2])
-                if key not in live:     # 已經不賣的組合不必留在查詢用的檔裡
+                if r[3] <= 0:
+                    # 「消失」事件：不計入最低價，但要記住最後一次事件是不是它
+                    gone[key] = True
                     continue
+                gone[key] = False
                 cur = best.get(key)
                 if cur is None:
                     best[key] = [r[3], 1, at]
@@ -181,10 +207,16 @@ def build_lows(station, rows):
                     if r[3] < cur[0]:   # 同價時保留較早的那次，和 GUI 版一致
                         cur[0] = r[3]
                         cur[2] = at
-    ats = sorted(set(v[2] for v in best.values()))
+
+    # 留下兩種：還在賣的，以及**曾經有價格、後來整個消失**的未來日期。
+    # 後者就是「確定賣完了」——不必再靠星期幾去猜。
+    keep = {k: v for k, v in best.items()
+            if k in live or (gone.get(k) and k[2] > today)}
+    ats = sorted(set(v[2] for v in keep.values()))
     idx = {a: i for i, a in enumerate(ats)}
-    lows = [[k[0], k[1], k[2], v[0], v[1], idx[v[2]]]
-            for k, v in sorted(best.items())]
+    lows = [[k[0], k[1], k[2], v[0], v[1], idx[v[2]],
+             0 if k in live else 1]
+            for k, v in sorted(keep.items())]
     return ats, lows
 
 
