@@ -132,6 +132,49 @@
       });
   }
 
+  /* 區間裡「查不到價格」的日子，並判斷是哪一種。
+   *
+   * 2026-11-05 實測確認：官方 API 只回「還買得到的最低價」，一天之內同一個
+   * 出發日會消失也會冒出來（50 分鐘內就有 12 個冒出、6 個消失），而且冒出來時
+   * 價格常是該航線中位數的 2～5 倍。那是**便宜艙等賣完**、後來又釋出最貴艙等，
+   * 不是「沒有航班」。
+   *
+   * API 不會告訴我們是哪一種，但可以從星期幾推：
+   *   這條線平常有飛那個星期幾 → 多半是賣完了
+   *   平常就不飛那個星期幾     → 本來就沒有航班
+   * 實測 11,770 個缺口裡，98.8% 屬於後者。
+   */
+  function missingInfo(o, d, from, to) {
+    var tw = twOf(o, d);
+    var all = (S.latest[tw] && S.latest[tw].byRoute[o + '|' + d]) || [];
+    if (!all.length) return [];
+    var has = {};
+    all.forEach(function (r) { has[r.date] = 1; });
+
+    // 用整個開賣範圍（不只查詢區間）統計每個星期幾飛不飛，樣本才夠
+    var fly = [0, 0, 0, 0, 0, 0, 0], tot = [0, 0, 0, 0, 0, 0, 0];
+    var c = parseDate(all[0].date), last = parseDate(all[all.length - 1].date);
+    while (c <= last) {
+      var w = c.getDay();
+      tot[w]++;
+      if (has[iso(c)]) fly[w]++;
+      c = addDays(c, 1);
+    }
+
+    var out = [];
+    var cur = parseDate(from), end = parseDate(to);
+    while (cur <= end) {
+      var k = iso(cur);
+      if (!has[k] && k >= all[0].date && k <= all[all.length - 1].date) {
+        var ww = cur.getDay();
+        out.push({ date: k, weekday: wd(k),
+                   soldOut: tot[ww] > 0 && fly[ww] / tot[ww] >= 0.5 });
+      }
+      cur = addDays(cur, 1);
+    }
+    return out;
+  }
+
   function cheapest(rows) {
     if (!rows.length) return [];
     var lo = Math.min.apply(null, rows.map(function (r) { return r.amount; }));
@@ -178,7 +221,7 @@
   }
 
   /* ---------------- 畫圖 ---------------- */
-  function rangeChart(boxId, legendId, rows) {
+  function rangeChart(boxId, legendId, rows, missing) {
     var box = $(boxId);
     if (!rows.length) { box.innerHTML = '<p class="empty">這個區間沒有資料。</p>';
                         $(legendId).innerHTML = ''; return; }
@@ -206,12 +249,21 @@
       }
     });
 
-    Chart.draw(box, { segments: segs, dots: dots, xType: 'date',
+    var sold = (missing || []).filter(function (m) { return m.soldOut; });
+    var marks = sold.map(function (m) {
+      return { x: +parseDate(m.date),
+               tip: m.date + '（' + m.weekday + '）查不到價格。這條線平常有飛這天，'
+                    + '多半是便宜艙等賣完了' };
+    });
+
+    Chart.draw(box, { segments: segs, dots: dots, marks: marks, xType: 'date',
                       xTitle: '出發日', yTitle: '票價 (TWD)', height: 330 });
     $(legendId).innerHTML =
       '<b style="color:#1b5fa5">●</b> 平日　<b style="color:#e67e22">●</b> 週六日　' +
-      '<b style="color:#1e8449">●</b> 區間最低　<b style="color:#9aa7b4">●</b> 歷史更低價　' +
-      '｜　滑鼠移到點上看當天明細；折線中斷代表那幾天沒有資料（未開賣或無航班）。';
+      '<b style="color:#1e8449">●</b> 區間最低　<b style="color:#9aa7b4">●</b> 歷史更低價' +
+      (marks.length ? '　<b style="color:#c0392b">▌</b> 可能售完' : '') +
+      '　｜　滑鼠移到點或標記上看明細。折線中斷＝那幾天查不到價格，'
+      + '多數是那天本來就沒有航班。';
   }
 
   /* 切到「價格變動」頁時才載完整歷史，並把表格補上。 */
@@ -259,9 +311,27 @@
     var segs = [pts.concat(nowMs > pts[pts.length - 1].x
                            ? [{ x: nowMs, y: pts[pts.length - 1].y }] : [])];
     var amounts = seq.map(function (p) { return p[1]; });
-    var dots = seq.map(function (p) {
-      return { x: +parseAt(p[0]), y: p[1], kind: 'weekday',
-               tip: p[0].slice(5, 16) + '　TWD ' + money(p[1]) };
+
+    /* 可疑尖刺：比自己上一筆暴漲一倍以上。
+     *
+     * 2026-11-05 查證：便宜艙等賣完時，那個出發日會整個從 API 上消失；
+     * 之後釋出座位重新出現時只剩最貴的艙等（實測 ICN→TPE 2026-11-07
+     * 從 3,799 變成 11,199）。我們不記錄「消失」，所以這在歷史裡
+     * 長得像一次暴漲——其實不是漲價。
+     *
+     * 判斷標準刻意用「和自己上一筆比」而不是「和航線中位數比」：
+     * 春節、連假的票本來就貴，用中位數會把 1,945 個正常的旺季價格誤標成異常；
+     * 用「一步漲一倍」只剩 17 個，而且每一個都是近期出發日的熱門航線。
+     */
+    var nSpike = 0;
+    var dots = seq.map(function (p, i) {
+      var spike = i > 0 && p[1] >= seq[i - 1][1] * 2;
+      if (spike) nSpike++;
+      return { x: +parseAt(p[0]), y: p[1], kind: spike ? 'spike' : 'weekday',
+               tip: p[0].slice(5, 16) + '　TWD ' + money(p[1])
+                    + (spike ? '　⚠ 一次漲到前一筆的 '
+                               + (p[1] / seq[i - 1][1]).toFixed(1)
+                               + ' 倍，可能是賣完後釋出的高價艙等，不是漲價' : '') };
     });
     Chart.draw($('chart-trend'), { segments: segs, dots: dots, xType: 'time',
                                    stepped: true, xTitle: '抓取時間',
@@ -270,18 +340,37 @@
       '<b>' + head + '</b>　｜　目前 TWD ' + money(amounts[amounts.length - 1]) +
       '　｜　期間最低 <b style="color:#1e8449">' + money(Math.min.apply(null, amounts)) +
       '</b>　｜　最高 <b style="color:#c0392b">' + money(Math.max.apply(null, amounts)) +
-      '</b>　｜　共 ' + seq.length + ' 個紀錄點。折線是階梯狀，因為只有價格變動時才留紀錄。';
+      '</b>　｜　共 ' + seq.length + ' 個紀錄點。折線是階梯狀，因為只有價格變動時才留紀錄。' +
+      (nSpike ? '<br><b style="color:#b9770e">⚠ 有 ' + nSpike +
+                ' 個點一次漲到前一筆的兩倍以上（橘色）</b>——便宜艙等賣完時，' +
+                '這個出發日會整個從官方資料消失，之後釋出座位重新出現時只剩最貴的艙等。' +
+                '看起來像暴漲，實際上不是漲價。' : '');
     $('trend-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   /* ---------------- 表格 ---------------- */
-  function dailyTable(tblId, rows, o, d) {
+  function dailyTable(tblId, rows, o, d, missing) {
     var cheap = {};
     cheapest(rows).forEach(function (r) { cheap[r.date] = 1; });
+    // 只把「可能售完」插進表裡。「本來就沒航班」的日子不插——
+    // 一週只飛兩天的航線會多出兩百多列空白，反而看不到有價格的那些。
+    var sold = {};
+    (missing || []).forEach(function (m) { if (m.soldOut) sold[m.date] = m; });
+    var merged = rows.slice();
+    Object.keys(sold).forEach(function (k) { merged.push(sold[k]); });
+    merged.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    rows = merged;
     var h = '<thead><tr><th>出發日</th><th>星期</th><th class="num">目前票價</th>' +
             '<th class="num">歷史最低</th><th class="num">與歷史差</th>' +
             '<th>歷史最低時間</th><th>資料更新</th></tr></thead><tbody>';
     rows.forEach(function (r) {
+      if (r.soldOut) {                       // 查不到價格的那幾天
+        h += '<tr class="soldout" data-date="' + r.date + '">' +
+             '<td>' + r.date + '</td><td>' + r.weekday + '</td>' +
+             '<td class="num">查不到</td>' +
+             '<td colspan="4">這條線平常有飛這天，多半是便宜艙等賣完了</td></tr>';
+        return;
+      }
       var cls = r.isRecord ? 'record' : (cheap[r.date] ? 'cheap' : '');
       var diff = (r.diff === null || r.histN < 2) ? '—'
                : (r.diff <= 0 ? '最低' : '+' + money(r.diff));
@@ -350,19 +439,23 @@
 
     Promise.all(need).then(function () {
       var rows = queryOneWay(o, d, f, t);
+      var miss = missingInfo(o, d, f, t);
       S.ctx = { o: o, d: d, f: f, t: t };
       $('head-out').innerHTML = (isRet ? '✈ 去程　' : '✈ ') + routeLabel(o, d) +
-        '<span class="sub">　' + f + ' ～ ' + t + '　' + spanText(f, t, rows.length) + '</span>';
-      dailyTable('tbl-out', rows, o, d);
-      rangeChart('chart-out', 'legend-out', rows);
+        '<span class="sub">　' + f + ' ～ ' + t + '　' +
+        spanText(f, t, rows.length, miss) + '</span>';
+      dailyTable('tbl-out', rows, o, d, miss);
+      rangeChart('chart-out', 'legend-out', rows, miss);
 
       if (isRet) {
         var rf = $('ret-from').value, rt = $('ret-to').value;
         var ret = queryOneWay(d, o, rf, rt);
+        var missR = missingInfo(d, o, rf, rt);
         $('head-ret').innerHTML = '✈ 回程　' + routeLabel(d, o) +
-          '<span class="sub">　' + rf + ' ～ ' + rt + '　' + spanText(rf, rt, ret.length) + '</span>';
-        dailyTable('tbl-ret', ret, d, o);
-        rangeChart('chart-ret', 'legend-ret', ret);
+          '<span class="sub">　' + rf + ' ～ ' + rt + '　' +
+          spanText(rf, rt, ret.length, missR) + '</span>';
+        dailyTable('tbl-ret', ret, d, o, missR);
+        rangeChart('chart-ret', 'legend-ret', ret, missR);
 
         var any = $('stay-any').checked;
         var smin = any ? 0 : +$('stay-min').value;
@@ -398,10 +491,16 @@
     });
   }
 
-  function spanText(from, to, n) {
+  function spanText(from, to, n, missing) {
     var span = Math.round((parseDate(to) - parseDate(from)) / 86400000) + 1;
     var miss = span - n;
-    return '有價格 ' + n + ' 天' + (miss > 0 ? '（' + miss + ' 天無資料）' : '');
+    if (miss <= 0) return '有價格 ' + n + ' 天';
+    var sold = (missing || []).filter(function (m) { return m.soldOut; }).length;
+    var none = miss - sold;
+    var parts = [];
+    if (none > 0) parts.push('無航班 ' + none + ' 天');
+    if (sold > 0) parts.push('可能售完 ' + sold + ' 天');
+    return '有價格 ' + n + ' 天（' + (parts.join('、') || miss + ' 天無資料') + '）';
   }
 
   function summary(rows) {

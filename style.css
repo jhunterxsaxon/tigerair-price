@@ -124,3 +124,8 @@ footer a { color: var(--accent); }
   .fields { gap: 8px 12px; }
   body { padding: 0 10px 32px; }
 }
+
+/* 查不到價格、但這條線平常有飛那天 —— 多半是賣完了。
+   用灰字＋斜體，明顯是「附註」而不是一筆價格資料。 */
+tbody tr.soldout td { color: #8b949c; font-style: italic; background: #fbfbfc; }
+tbody tr.soldout td:first-child { color: #c0392b; font-style: normal; }

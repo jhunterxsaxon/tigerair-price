@@ -13,7 +13,9 @@
   var PAD = { top: 14, right: 16, bottom: 34, left: 68 };
   var COLORS = {
     line: '#1b5fa5', weekday: '#1b5fa5', weekend: '#e67e22',
-    low: '#1e8449', hist: '#9aa7b4', grid: '#e6ebf0', axis: '#6b7a89'
+    low: '#1e8449', hist: '#9aa7b4', grid: '#e6ebf0', axis: '#6b7a89',
+    soldout: '#c0392b',      // 查不到價格、但這條線平常有飛 → 多半是賣完了
+    spike: '#b9770e'         // 貴到不合理，多半是艙位釋出而非漲價
   };
 
   function money(n) { return Math.round(n).toLocaleString('en-US'); }
@@ -131,6 +133,18 @@
                                      stroke: '#fff',
                                      'stroke-width': tight ? 0.5 : 1.5 }));
       if (p.tip) hit.push({ px: X(p.x), py: Y(p.y), tip: p.tip });
+    });
+
+    /* 底部標記：那一天「沒有價格」，所以畫不出點，只能在 X 軸上立一根短豎線。
+       不要硬給它一個 y 值假裝有價格——那是編造資料。 */
+    (opts.marks || []).forEach(function (m) {
+      var x = X(m.x);
+      if (x < PAD.left - 1 || x > W - PAD.right + 1) return;
+      svg.appendChild(el('line', {
+        x1: x, y1: H - PAD.bottom, x2: x, y2: H - PAD.bottom - 11,
+        stroke: COLORS.soldout, 'stroke-width': 2
+      }));
+      if (m.tip) hit.push({ px: x, py: H - PAD.bottom - 6, tip: m.tip });
     });
 
     box.appendChild(svg);
