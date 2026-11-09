@@ -40,6 +40,20 @@
       </div>
     </div>
     <div class="field ret-only">
+      <label>回程航線</label>
+      <div class="pair">
+        <label class="check"><input type="checkbox" id="open-jaw"> 不同機場進出</label>
+      </div>
+    </div>
+    <div class="field ret-only jaw-only">
+      <label for="ret-origin">回程出發地</label>
+      <select id="ret-origin"></select>
+    </div>
+    <div class="field ret-only jaw-only">
+      <label for="ret-dest">回程目的地</label>
+      <select id="ret-dest"></select>
+    </div>
+    <div class="field ret-only">
       <label>回程日期</label>
       <div class="pair">
         <input type="date" id="ret-from"><span>～</span><input type="date" id="ret-to">
@@ -121,6 +135,12 @@
       那通常不是漲價，而是前面賣完、後來釋出座位時只剩最貴的艙等
       （實測 ICN→TPE 2026-11-07 從 3,799 變成 11,199）。
       刻意不用「比航線平均貴」當標準——春節、連假的票本來就貴，那不是異常。</li>
+    <li><b>來回可以不同機場進出</b>（開口行程）——勾「不同機場進出」就能分別指定回程的
+      出發地與目的地，例如去程飛東京成田、回程從大阪關西回高雄。
+      沒勾的話回程自動是去程的反向。</li>
+    <li><b>來回組合</b>列出所有合法組合（回程不早於去程、符合停留天數）的總價前 N 名，
+      並附上「歷史最低總價」——看得出現在這個總價離歷史低點還有多遠。
+      去回兩段都要累積兩筆以上紀錄才會顯示，否則是「—」。</li>
     <li>城市群組代碼（XX2 北海道之類）已經排除。實測群組價與個別機場不同步，訂票要看個別機場。</li>
   </ul>
   <h2>資料更新時間</h2>

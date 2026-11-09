@@ -23,7 +23,8 @@
     histP: {},         // tw -> Promise，避免同時觸發兩次下載
     ctx: null,         // 最近一次查詢的條件
     changesReady: false,
-    statusText: ''
+    statusText: '',
+    jawTouched: false      // 使用者有沒有自己挑過回程航線
   };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -440,17 +441,30 @@
   }
 
   function comboTable(list) {
+    // 歷史最低總價本來就有算（roundTrip 的 histTotal），之前只拿來把列染色、
+    // 沒真的顯示出來——單程表有「歷史最低」和「與歷史差」，來回卻看不到，補上。
     var h = '<thead><tr><th>去程</th><th>星期</th><th class="num">去程價</th>' +
             '<th>回程</th><th>星期</th><th class="num">回程價</th>' +
-            '<th class="num">停留</th><th class="num">總價</th></tr></thead><tbody>';
+            '<th class="num">停留</th><th class="num">總價</th>' +
+            '<th class="num">歷史最低總價</th><th class="num">與歷史差</th>' +
+            '</tr></thead><tbody>';
     list.forEach(function (c, i) {
+      // 兩邊都要累積兩筆以上紀錄，「和歷史比」才有意義；
+      // 只抓過一次時「現在＝歷史最低」是理所當然的，標了只會是雜訊
+      var enough = c.out.histN > 1 && c.ret.histN > 1 && c.histTotal !== null;
+      var diff = enough ? c.total - c.histTotal : null;
       h += '<tr class="' + (c.isRecord ? 'record' : (i === 0 ? 'cheap' : '')) + '">' +
-           '<td>' + c.out.date + '</td><td>' + c.out.weekday + '</td>' +
+           '<td>' + (c.isRecord ? '★ ' : '') + c.out.date + '</td>' +
+           '<td>' + c.out.weekday + '</td>' +
            '<td class="num">' + money(c.out.amount) + '</td>' +
            '<td>' + c.ret.date + '</td><td>' + c.ret.weekday + '</td>' +
            '<td class="num">' + money(c.ret.amount) + '</td>' +
            '<td class="num">' + c.stay + ' 天</td>' +
-           '<td class="num"><b>' + money(c.total) + '</b></td></tr>';
+           '<td class="num"><b>' + money(c.total) + '</b></td>' +
+           '<td class="num">' + (enough ? money(c.histTotal) : '—') + '</td>' +
+           '<td class="num">' +
+             (diff === null ? '—' : (diff <= 0 ? '最低' : '+' + money(diff))) +
+           '</td></tr>';
     });
     $('tbl-combo').innerHTML = h + '</tbody>';
   }
@@ -494,8 +508,9 @@
 
     status('讀取資料中…');
     // 查詢只要 latest ＋ 預先算好的歷史最低，不載完整歷史（那個會愈來愈大）
+    var R = retRoute();                    // 回程航線（可能不是去程的反向）
     var need = [loadLatest(twOf(o, d)), loadLows(twOf(o, d))];
-    if (isRet) { need.push(loadLatest(twOf(d, o))); need.push(loadLows(twOf(d, o))); }
+    if (isRet) { need.push(loadLatest(twOf(R.o, R.d))); need.push(loadLows(twOf(R.o, R.d))); }
 
     Promise.all(need).then(function () {
       var rows = queryOneWay(o, d, f, t);
@@ -509,12 +524,14 @@
 
       if (isRet) {
         var rf = $('ret-from').value, rt = $('ret-to').value;
-        var ret = queryOneWay(d, o, rf, rt);
-        var missR = missingInfo(d, o, rf, rt);
-        $('head-ret').innerHTML = '✈ 回程　' + routeLabel(d, o) +
+        var ret = queryOneWay(R.o, R.d, rf, rt);
+        var missR = missingInfo(R.o, R.d, rf, rt);
+        var jaw = (R.o !== d || R.d !== o);
+        $('head-ret').innerHTML = '✈ 回程　' + routeLabel(R.o, R.d) +
+          (jaw ? '<span class="tag">開口行程</span>' : '') +
           '<span class="sub">　' + rf + ' ～ ' + rt + '　' +
           spanText(rf, rt, ret.length, missR) + '</span>';
-        dailyTable('tbl-ret', ret, d, o, missR);
+        dailyTable('tbl-ret', ret, R.o, R.d, missR);
         rangeChart('chart-ret', 'legend-ret', ret, missR);
 
         var any = $('stay-any').checked;
@@ -522,6 +539,7 @@
         var smax = any ? null : +$('stay-max').value;
         var rr = roundTrip(rows, ret, smin, smax, +$('top').value);
         $('head-combo').innerHTML = '⇄ 來回　' + routeLabel(o, d) +
+          (jaw ? '　／　回程 ' + routeLabel(R.o, R.d) + '<span class="tag">開口行程</span>' : '') +
           '<span class="sub">　去程 ' + f + '～' + t + '　｜　回程 ' + rf + '～' + rt +
           '　｜　' + (any ? '不限停留天數' : '停留 ' + smin + '～' + smax + ' 天') +
           '　｜　共 ' + rr.n.toLocaleString('en-US') + ' 種組合</span>';
@@ -600,6 +618,67 @@
     }
   }
 
+  /* 回程要飛哪一條。
+   *
+   * 預設是去程的反向（TPE→NRT 的回程就是 NRT→TPE），但使用者可能
+   * **從不同機場進出**——飛東京成田、從大阪關西回高雄，日本線很常這樣訂。
+   * 勾了「不同機場進出」就各自選，沒勾就自動跟著去程走。
+   */
+  function retRoute() {
+    var o = $('origin').value, d = $('dest').value;
+    if (!$('open-jaw').checked) return { o: d, d: o };
+    return { o: $('ret-origin').value || d, d: $('ret-dest').value || o };
+  }
+
+  /* 回程的兩個下拉：出發地只列「有航線飛回台灣」的點 */
+  function fillRetOrigins() {
+    var codes = {};
+    S.routes.forEach(function (r) { codes[r[0]] = 1; });
+    var keep = $('ret-origin').value;
+    fillGrouped($('ret-origin'), Object.keys(codes));
+    if (keep && Object.keys(codes).indexOf(keep) >= 0) $('ret-origin').value = keep;
+  }
+
+  function fillRetDests(o) {
+    var codes = S.routes.filter(function (r) { return r[0] === o; })
+                        .map(function (r) { return r[1]; });
+    var had = $('ret-dest').value;
+    fillGrouped($('ret-dest'), codes);
+    if (had && codes.indexOf(had) >= 0) { $('ret-dest').value = had; return; }
+    // 預設挑台灣的站——回程幾乎都是飛回台灣
+    var tw = codes.filter(function (c) { return TW.indexOf(c) >= 0; });
+    if (tw.length) $('ret-dest').value = tw[0];
+  }
+
+  /* 勾開口時，把兩個下拉預先填成去程的反向，使用者只要改要改的那一邊 */
+  function syncJaw(force) {
+    var on = $('open-jaw').checked;
+    document.querySelectorAll('.jaw-only').forEach(function (e) {
+      e.style.display = on ? '' : 'none';
+    });
+    if (!on) return;
+    fillRetOrigins();
+    // 使用者還沒自己挑過就預設成「去程的反向」，他通常只想改其中一邊。
+    // 不能用「value 是空的」當判斷——下拉一填好就自動選上第一個選項了。
+    if (force || !S.jawTouched) {
+      if (hasOption($('ret-origin'), $('dest').value)) {
+        $('ret-origin').value = $('dest').value;
+      }
+      fillRetDests($('ret-origin').value);
+      if (hasOption($('ret-dest'), $('origin').value)) {
+        $('ret-dest').value = $('origin').value;
+      }
+    } else {
+      fillRetDests($('ret-origin').value);
+    }
+  }
+
+  function hasOption(sel, v) {
+    return !!v && Array.prototype.some.call(sel.options, function (o) {
+      return o.value === v;
+    });
+  }
+
   function fillGrouped(sel, codes) {
     var keep = sel.value;
     var byCountry = {};
@@ -641,6 +720,7 @@
     document.querySelectorAll('.ret-only').forEach(function (e) {
       e.style.display = isRet ? '' : 'none';
     });
+    if (isRet) syncJaw();
     $('lbl-out').textContent = isRet ? '去程日期' : '出發日期';
     if (!isRet && $('tab-combo').classList.contains('on')) tab('daily');
   }
@@ -659,7 +739,9 @@
     try {
       localStorage.setItem('tigerfare', JSON.stringify({
         o: $('origin').value, d: $('dest').value, trip: $('trip').value,
-        stayMin: $('stay-min').value, stayMax: $('stay-max').value
+        stayMin: $('stay-min').value, stayMax: $('stay-max').value,
+        jaw: $('open-jaw').checked,
+        ro: $('ret-origin').value, rd: $('ret-dest').value
       }));
     } catch (e) { /* 無痕模式會丟例外，不影響功能 */ }
   }
@@ -672,6 +754,15 @@
       if (v.trip) $('trip').value = v.trip;
       if (v.stayMin) $('stay-min').value = v.stayMin;
       if (v.stayMax) $('stay-max').value = v.stayMax;
+      if (v.jaw) {
+        $('open-jaw').checked = true;
+        syncJaw();
+        if (v.ro && hasOption($('ret-origin'), v.ro)) {
+          S.jawTouched = true;
+          $('ret-origin').value = v.ro; fillRetDests(v.ro);
+        }
+        if (v.rd && hasOption($('ret-dest'), v.rd)) $('ret-dest').value = v.rd;
+      }
     } catch (e) { /* 同上 */ }
   }
 
@@ -714,7 +805,14 @@
 
   /* 事件 */
   $('go').onclick = run;
-  $('origin').onchange = function () { fillDests(this.value); };
+  // 改了去程就把回程重設回反向（force），否則會留著上一條航線的回程，很容易看錯
+  $('origin').onchange = function () {
+    fillDests(this.value); S.jawTouched = false; syncJaw(true);
+  };
+  $('dest').onchange = function () { S.jawTouched = false; syncJaw(true); };
+  $('open-jaw').onchange = function () { syncJaw(!S.jawTouched); };
+  $('ret-origin').onchange = function () { S.jawTouched = true; fillRetDests(this.value); };
+  $('ret-dest').onchange = function () { S.jawTouched = true; };
   $('trip').onchange = function () { syncTrip(); syncRetDates(); };
   $('out-from').onchange = $('out-to').onchange = function () {
     $('ret-from').value = ''; syncRetDates();

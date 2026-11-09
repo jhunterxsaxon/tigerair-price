@@ -129,3 +129,8 @@ footer a { color: var(--accent); }
    用灰字＋斜體，明顯是「附註」而不是一筆價格資料。 */
 tbody tr.soldout td { color: #8b949c; font-style: italic; background: #fbfbfc; }
 tbody tr.soldout td:first-child { color: #c0392b; font-style: normal; }
+
+/* 開口行程的小標籤：提醒這條回程不是去程的反向 */
+.tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px;
+  background: #e67e22; color: #fff; font-size: 11.5px; font-weight: bold;
+  vertical-align: middle; }
