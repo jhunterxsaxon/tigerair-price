@@ -1,43 +1,11 @@
 {
  "counts": {
-  "KHH": 4989,
+  "KHH": 4991,
   "RMQ": 700,
   "TNN": 400,
-  "TPE": 10765
+  "TPE": 10769
  },
  "fetch_log": [
-  {
-   "at": "2026-11-08 22:27:39",
-   "changed": 1117,
-   "ok": true,
-   "rows": 10815,
-   "secs": 1.2,
-   "station": "TPE"
-  },
-  {
-   "at": "2026-11-08 22:27:39",
-   "changed": 390,
-   "ok": true,
-   "rows": 5011,
-   "secs": 0.7,
-   "station": "KHH"
-  },
-  {
-   "at": "2026-11-08 22:27:39",
-   "changed": 60,
-   "ok": true,
-   "rows": 711,
-   "secs": 0.3,
-   "station": "RMQ"
-  },
-  {
-   "at": "2026-11-08 22:27:39",
-   "changed": 24,
-   "ok": true,
-   "rows": 406,
-   "secs": 0.4,
-   "station": "TNN"
-  },
   {
    "at": "2026-11-09 02:35:30",
    "changed": 1040,
@@ -485,6 +453,38 @@
    "rows": 400,
    "secs": 0.4,
    "station": "TNN"
+  },
+  {
+   "at": "2026-11-13 23:38:03",
+   "changed": 869,
+   "ok": true,
+   "rows": 10769,
+   "secs": 1.0,
+   "station": "TPE"
+  },
+  {
+   "at": "2026-11-13 23:38:03",
+   "changed": 349,
+   "ok": true,
+   "rows": 4991,
+   "secs": 0.7,
+   "station": "KHH"
+  },
+  {
+   "at": "2026-11-13 23:38:03",
+   "changed": 58,
+   "ok": true,
+   "rows": 700,
+   "secs": 0.4,
+   "station": "RMQ"
+  },
+  {
+   "at": "2026-11-13 23:38:03",
+   "changed": 28,
+   "ok": true,
+   "rows": 400,
+   "secs": 0.4,
+   "station": "TNN"
   }
  ],
  "history_months": {
@@ -509,9 +509,9 @@
  "imported_from": "1151022s/data/prices.db",
  "route_counts": {
   "AXT|TPE": 38,
-  "CJU|KHH": 150,
+  "CJU|KHH": 151,
   "CJU|RMQ": 99,
-  "CJU|TPE": 348,
+  "CJU|TPE": 350,
   "CTS|KHH": 188,
   "CTS|TPE": 351,
   "DAD|KHH": 74,
@@ -519,27 +519,27 @@
   "FKS|TPE": 35,
   "FUK|KHH": 150,
   "FUK|TPE": 351,
-  "GMP|KHH": 168,
+  "GMP|KHH": 167,
   "HKD|TPE": 289,
   "HNA|TPE": 38,
-  "HND|TPE": 344,
+  "HND|TPE": 345,
   "HSG|TPE": 150,
-  "ICN|TPE": 340,
+  "ICN|TPE": 339,
   "ISG|KHH": 100,
   "ISG|TPE": 201,
-  "KCZ|TPE": 99,
+  "KCZ|TPE": 100,
   "KHH|CJU": 200,
   "KHH|CTS": 188,
   "KHH|DAD": 76,
   "KHH|FUK": 150,
-  "KHH|GMP": 169,
+  "KHH|GMP": 170,
   "KHH|ISG": 100,
   "KHH|KIX": 351,
   "KHH|KMJ": 100,
   "KHH|KMQ": 37,
-  "KHH|NGO": 151,
+  "KHH|NGO": 150,
   "KHH|NRT": 348,
-  "KHH|OKA": 350,
+  "KHH|OKA": 351,
   "KHH|OKJ": 149,
   "KHH|SDJ": 150,
   "KIJ|TPE": 100,
@@ -559,14 +559,14 @@
   "OKA|KHH": 350,
   "OKA|RMQ": 100,
   "OKA|TNN": 100,
-  "OKA|TPE": 349,
+  "OKA|TPE": 350,
   "OKJ|KHH": 150,
   "OKJ|TPE": 351,
-  "PUS|TPE": 349,
+  "PUS|TPE": 348,
   "RMQ|CJU": 101,
   "RMQ|NGO": 150,
   "RMQ|OKA": 100,
-  "SDJ|KHH": 149,
+  "SDJ|KHH": 150,
   "SDJ|TPE": 148,
   "TNN|KMJ": 100,
   "TNN|OKA": 100,
@@ -574,27 +574,27 @@
   "TPE|CJU": 351,
   "TPE|CTS": 351,
   "TPE|DAD": 58,
-  "TPE|FKS": 36,
+  "TPE|FKS": 35,
   "TPE|FUK": 351,
   "TPE|HKD": 282,
   "TPE|HNA": 35,
-  "TPE|HND": 348,
+  "TPE|HND": 349,
   "TPE|HSG": 149,
-  "TPE|ICN": 343,
+  "TPE|ICN": 342,
   "TPE|ISG": 201,
   "TPE|KCZ": 99,
   "TPE|KIJ": 100,
   "TPE|KIX": 351,
-  "TPE|KMI": 100,
+  "TPE|KMI": 99,
   "TPE|KMQ": 99,
-  "TPE|NGO": 343,
-  "TPE|NRT": 348,
+  "TPE|NGO": 342,
+  "TPE|NRT": 350,
   "TPE|OIT": 100,
   "TPE|OKA": 350,
   "TPE|OKJ": 350,
   "TPE|PUS": 348,
-  "TPE|SDJ": 147,
-  "TPE|YGJ": 98,
+  "TPE|SDJ": 148,
+  "TPE|YGJ": 99,
   "YGJ|TPE": 100
  },
  "routes": [
@@ -957,6 +957,6 @@
   "RMQ",
   "TNN"
  ],
- "total_rows": 16854,
- "updated": "2026-11-13 15:28:35"
+ "total_rows": 16860,
+ "updated": "2026-11-13 23:38:03"
 }
