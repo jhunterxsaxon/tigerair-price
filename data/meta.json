@@ -7,38 +7,6 @@
  },
  "fetch_log": [
   {
-   "at": "2026-11-21 05:38:00",
-   "changed": 421,
-   "ok": true,
-   "rows": 10945,
-   "secs": 0.9,
-   "station": "TPE"
-  },
-  {
-   "at": "2026-11-21 05:38:00",
-   "changed": 416,
-   "ok": true,
-   "rows": 5295,
-   "secs": 0.6,
-   "station": "KHH"
-  },
-  {
-   "at": "2026-11-21 05:38:00",
-   "changed": 27,
-   "ok": true,
-   "rows": 684,
-   "secs": 0.4,
-   "station": "RMQ"
-  },
-  {
-   "at": "2026-11-21 05:38:00",
-   "changed": 31,
-   "ok": true,
-   "rows": 392,
-   "secs": 0.3,
-   "station": "TNN"
-  },
-  {
    "at": "2026-11-21 15:50:29",
    "changed": 715,
    "ok": true,
@@ -485,6 +453,38 @@
    "rows": 386,
    "secs": 0.5,
    "station": "TNN"
+  },
+  {
+   "at": "2026-11-26 06:52:14",
+   "changed": 338,
+   "ok": true,
+   "rows": 10786,
+   "secs": 1.1,
+   "station": "TPE"
+  },
+  {
+   "at": "2026-11-26 06:52:14",
+   "changed": 146,
+   "ok": true,
+   "rows": 5219,
+   "secs": 0.8,
+   "station": "KHH"
+  },
+  {
+   "at": "2026-11-26 06:52:14",
+   "changed": 30,
+   "ok": true,
+   "rows": 676,
+   "secs": 0.5,
+   "station": "RMQ"
+  },
+  {
+   "at": "2026-11-26 06:52:14",
+   "changed": 11,
+   "ok": true,
+   "rows": 386,
+   "secs": 0.5,
+   "station": "TNN"
   }
  ],
  "history_months": {
@@ -520,7 +520,7 @@
   "FUK|KHH": 145,
   "FUK|TPE": 338,
   "GMP|KHH": 161,
-  "HKD|TPE": 276,
+  "HKD|TPE": 275,
   "HNA|TPE": 35,
   "HND|TPE": 337,
   "HSG|TPE": 144,
@@ -573,13 +573,13 @@
   "TPE|AXT": 95,
   "TPE|CJU": 338,
   "TPE|CTS": 337,
-  "TPE|DAD": 144,
+  "TPE|DAD": 145,
   "TPE|FKS": 94,
-  "TPE|FUK": 337,
+  "TPE|FUK": 338,
   "TPE|HKD": 268,
   "TPE|HNA": 32,
-  "TPE|HND": 334,
-  "TPE|HSG": 143,
+  "TPE|HND": 333,
+  "TPE|HSG": 144,
   "TPE|ICN": 331,
   "TPE|ISG": 194,
   "TPE|KCZ": 96,
@@ -587,8 +587,8 @@
   "TPE|KIX": 338,
   "TPE|KMI": 96,
   "TPE|KMQ": 94,
-  "TPE|NGO": 330,
-  "TPE|NRT": 335,
+  "TPE|NGO": 328,
+  "TPE|NRT": 336,
   "TPE|OIT": 96,
   "TPE|OKA": 338,
   "TPE|OKJ": 338,
@@ -958,5 +958,5 @@
   "TNN"
  ],
  "total_rows": 17067,
- "updated": "2026-11-26 02:08:01"
+ "updated": "2026-11-26 06:52:14"
 }
